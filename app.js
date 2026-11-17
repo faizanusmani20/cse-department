@@ -8,9 +8,9 @@ const reqOf=(sid,nid)=>db.reqs.find(r=>r.student===sid&&r.note===nid);
 const say=(m,ok)=>{S.msg=m;S.ok=!!ok};
 
 function render(){
- if(S.loading){$('root').innerHTML='<div class="boot"><div class="spin"></div><div>Loading CSE Notes…</div></div>';return}
+ if(S.loading){$('root').innerHTML='<div class="boot"><div class="spin"></div><div>Loading CSE Department…</div></div>';return}
  const me=S.recovery?null:S.me;
- const nav=`<div class="top"><div class="bar"><div class="logo" data-a="home">${BOOK} CSE Notes</div>
+ const nav=`<div class="top"><div class="bar"><div class="logo" data-a="home">${BOOK} CSE Department</div>
  ${me&&me.role==='student'?`<input class="search" id="q" placeholder="Search notes, subjects or teachers…" value="${esc(S.q)}">`:'<div style="flex:1"></div>'}
  ${me?`<div class="chip"><div class="av">${esc(me.name[0])}</div><span>${esc(me.name)} · ${me.role}</span>${window._ip?'<button class="g" data-a="install">Install app</button>':''}<button class="g" data-a="logout">Log out</button></div>`:''}</div></div>`;
  const m=S.msg?`<div class="toast ${S.ok?'ok':'bad'}">${S.ok?'✓':'!'} ${esc(S.msg)}</div>`:'';
@@ -56,7 +56,7 @@ function authView(){
   <label>Confirm password${pw('p2','Repeat password','new-password')}</label>
   <button class="big full" style="margin-top:14px" data-a="setpw">Save new password</button>`}[m];
  const fire=m==='signup',flip=S.lastMode!==undefined&&((S.lastMode==='signup')!==fire);
- return `<div class="authwrap m-${m}${flip?' flip':''}"><div class="aside ${fire?'fire':'water'}">${fire?FIRE:WATER}<div class="brand">${BOOK} CSE Notes</div>
+ return `<div class="authwrap m-${m}${flip?' flip':''}"><div class="aside ${fire?'fire':'water'}">${fire?FIRE:WATER}<div class="brand">${BOOK} CSE Department</div>
   <div class="at"><h1>${T[0]}</h1><p>${T[1]}</p>${m==='login'||m==='signup'?`<button class="ghost" data-a="mode">${fire?'Log in':'Create account'}</button>`:''}</div>
   <ul class="perks"><li>${LCK} Private notes, unlocked by your teachers</li><li>${EYE} Read online in a big, clean viewer</li><li>${LAY} Organised subject by subject</li></ul></div>
   <div class="formside"><div class="fcard">${S.msg?`<div class="${S.ok?'fok':'ferr'}">${esc(S.msg)}</div>`:''}${F}</div></div></div>`;
