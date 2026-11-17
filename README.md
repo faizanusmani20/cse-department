@@ -1,0 +1,33 @@
+# CSE Notes - department notes website
+
+Students request access to a PDF, the teacher approves, and only then can the student read it. Roles: student, teacher, admin.
+Built with plain HTML, CSS and JavaScript on Supabase (login, database, private PDF storage) and hosted on Vercel.
+
+## Files
+| File | What it does |
+|---|---|
+| index.html | The page shell. Loads the libraries, style.css and the scripts |
+| style.css | All styling, themes (water / fire), animations, mobile layout |
+| config.js | Your Supabase Project URL and publishable key (the only file you edit) |
+| icons.js | SVG icons, the subject list, small helpers |
+| app.js | All the logic: login, notes, requests, admin tools, PDF reader |
+| manifest.json, sw.js, icon-*.png | Make the site installable on a phone |
+| sql/schema.sql | Run first in Supabase: tables, roles, security rules, private storage |
+| sql/subjects_update.sql | Run second: admin can add, rename and delete subjects |
+| sql/features_update.sql | Run third: notice board and teacher note editing |
+
+Script order in index.html matters: Supabase library, PDF.js, then config.js, icons.js, app.js.
+
+## Setup
+1. Supabase: create a project. In SQL Editor run sql/schema.sql, then sql/subjects_update.sql, then sql/features_update.sql (one time each).
+2. Authentication > Sign In / Providers > Email: Enable email provider ON, Confirm email OFF, Minimum password length 8.
+3. Put your Project URL and publishable key in config.js. Never use a key starting with sb_secret_.
+4. Sign up on the site with your own email, then make yourself admin in the SQL Editor:
+   update profiles set role='admin', status='active' where lower(email)=lower('you@mail.com');
+5. Deploy: push this folder to a (private) GitHub repo, import it in Vercel (framework preset: Other, no build command).
+6. Supabase > Authentication > URL Configuration: put your Vercel link in Site URL and Redirect URLs (needed for Forgot password).
+
+## Notes
+- The sql folder and this README are listed in .vercelignore, so they are not published.
+- Students cannot download PDFs. Teachers and admin can open and download.
+- Free Supabase projects can pause after long inactivity; export your tables now and then.
