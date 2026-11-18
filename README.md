@@ -8,9 +8,9 @@ Built with plain HTML, CSS and JavaScript on Supabase (login, database, private 
 |---|---|
 | index.html | The page shell. Loads the libraries, style.css and the scripts |
 | style.css | All styling, themes (water / fire), animations, mobile layout |
-| config.js | Your Supabase Project URL and publishable key (the only file you edit) |
-| icons.js | SVG icons, the subject list, small helpers |
-| app.js | All the logic: login, notes, requests, admin tools, PDF reader |
+| js/config.js | Your Supabase Project URL and publishable key (the only file you edit) |
+| js/icons.js | SVG icons, the subject list, small helpers |
+| js/ | Modularised application logic (see js/README.md): state, utils, views, data, events |
 | manifest.json, sw.js, icon-*.png | Make the site installable on a phone |
 | sql/schema.sql | Run first in Supabase: tables, roles, security rules, private storage |
 | sql/subjects_update.sql | Run second: admin can add, rename and delete subjects |
