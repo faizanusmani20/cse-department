@@ -31,6 +31,7 @@ document.addEventListener('click', async e => {
     if (db.notes.some(n => n.subject === v)) say('This subject still has notes. Delete or move them first.');
     else { if (!confirm('Delete the subject "' + v + '"?')) return; E(await sb.from('subjects').delete().eq('name', v)); sync = true; }
   } else if (a === 'install') { if (window._ip) { window._ip.prompt(); window._ip = null; } }
+  else if (a === 'notif') { await requestNotifications(); render(); return; }
   else if (a === 'zoom') { setZoom((S.zoom || 1) + (+v) * .25); return; }
   else if (a === 'zoomreset') { setZoom(1); return; }
   else if (a === 'page') { goToPage(currentPage() + (+v)); return; }

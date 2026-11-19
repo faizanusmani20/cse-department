@@ -226,3 +226,8 @@ textarea{font:inherit;width:100%;padding:10px 12px;margin:8px 0;border-radius:8p
 .rprog{height:3px;background:var(--bd);overflow:hidden}
 .rprog i{display:block;height:100%;width:0;background:linear-gradient(90deg,var(--pri),var(--pri2));transition:width .15s ease}
 .reader:fullscreen .rprog{flex:none}
+
+/* ---- notifications ---- */
+.nbell{display:inline-flex;align-items:center;gap:4px;padding:7px 10px}
+.nbell svg{width:15px;height:15px;margin:0}
+.nbadge{background:var(--bad);color:#fff;border-radius:99px;font-size:11px;line-height:1;padding:3px 6px;font-weight:700}

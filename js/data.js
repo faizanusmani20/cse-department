@@ -17,6 +17,7 @@ async function load() {
   ]);
   if (sj.data) { SUBJ = sj.data.map(s => [s.name, ICONS[s.icon] || FILE]); if (S.subject && !SUBJ.some(s => s[0] === S.subject)) S.subject = null; }
   db = { notices: nt.data || [], subjects: sj.data || [], users: u.data || [], notes: (n.data || []).map(x => ({ ...x, teacher: x.teacher_id })), reqs: (r.data || []).map(x => ({ ...x, student: x.student_id, note: x.note_id })) };
+  if (typeof checkNotifications === 'function') checkNotifications();
 }
 
 /* Download the current note's PDF into the url cache (if allowed). */

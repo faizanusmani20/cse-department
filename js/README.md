@@ -18,7 +18,8 @@ dependency list.
 | 7 | `data.js` | Supabase data access: `load()`, `ensureUrl()`, `paint()` (PDF.js rendering). | `state.js` |
 | 8 | `pdf-compress.js` | Client-side PDF compression before upload (`safeCompressPdf`, `compressPdf`, `rasterizePdf`). | `pdf-lib`, `pdf.js` |
 | 9 | `viewer.js` | PDF viewer gestures and shortcuts: pinch zoom, Ctrl/Cmd + wheel, double-tap, page navigation, keyboard. | `data.js` (`paint`), `state.js` |
-| 10 | `events.js` | All event listeners (click, input, change, drag/drop, …) and application bootstrap. | everything above |
+| 10 | `notifications.js` | PWA notifications and polling for new requests/approvals (`checkNotifications`, `requestNotifications`). | `state.js`, `data.js` |
+| 11 | `events.js` | All event listeners (click, input, change, drag/drop, …) and application bootstrap. | everything above |
 
 \*`app.js` is loaded before `views.js` but only calls `authView`/`studentView`/etc. at runtime (inside `render()`), by which point `views.js` has loaded. Keep `app.js` above `views.js` only if you preserve this lazy-call pattern.
 
@@ -62,6 +63,20 @@ lives in `viewer.js`. Both share `S.zoom` and the `paint()` renderer.
 | `F` | Toggle fullscreen |
 
 Zoom and the last-read page are remembered in `localStorage`.
+
+## Notifications
+
+`notifications.js` uses the Notification API through the service worker. The
+top-bar bell button asks for permission. While the app is open it polls every
+60 seconds (and on tab focus) and notifies:
+
+- teachers about new pending requests for their notes,
+- admins about teachers waiting for approval,
+- students when one of their requests is approved, rejected or revoked.
+
+Seen state is stored per user in `localStorage` (`cse:notif:<user>:<role>`), so
+the same request is not announced twice. The service worker also has a `push`
+handler ready for a future Web Push backend.
 
 ## Adding a new feature
 
