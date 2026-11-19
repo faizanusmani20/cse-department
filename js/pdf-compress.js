@@ -98,7 +98,7 @@ async function rasterizePdf(bytes, onProgress = () => {}) {
     ctx.fillRect(0, 0, canvas.width, canvas.height);
     await page.render({ canvasContext: ctx, viewport }).promise;
     const blob = await new Promise(res => canvas.toBlob(res, 'image/jpeg', PDF_COMPRESS.jpegQuality));
-    if (!blob) continue;
+    if (!blob) return null;
     const img = await out.embedJpg(new Uint8Array(await blob.arrayBuffer()));
     const pageOut = out.addPage([base.width, base.height]);
     pageOut.drawImage(img, { x: 0, y: 0, width: base.width, height: base.height });
