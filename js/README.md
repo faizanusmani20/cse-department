@@ -16,7 +16,8 @@ dependency list.
 | 5 | `app.js` | Core rendering: `render()` (top bar + view dispatch + animations) and `tabs()`. | `state.js`, `utils.js`, `views.js`* |
 | 6 | `views.js` | Screen templates: `authView`, `studentView`, `teacherView`, `adminView`, `reader`, `docCard`, `results`. | `state.js`, `utils.js`, `icons.js` |
 | 7 | `data.js` | Supabase data access: `load()`, `ensureUrl()`, `paint()` (PDF.js rendering). | `state.js` |
-| 8 | `events.js` | All event listeners (click, input, change, drag/drop, …) and application bootstrap. | everything above |
+| 8 | `pdf-compress.js` | Client-side PDF compression before upload (`safeCompressPdf`, `compressPdf`, `rasterizePdf`). | `pdf-lib`, `pdf.js` |
+| 9 | `events.js` | All event listeners (click, input, change, drag/drop, …) and application bootstrap. | everything above |
 
 \*`app.js` is loaded before `views.js` but only calls `authView`/`studentView`/etc. at runtime (inside `render()`), by which point `views.js` has loaded. Keep `app.js` above `views.js` only if you preserve this lazy-call pattern.
 
@@ -39,6 +40,9 @@ Everything communicates through a small set of globals defined in `state.js`:
 - After a mutating action, set `sync = true` so `load()` refreshes `db`, then
   `render()` redraws. See `events.js`.
 - PDF blobs are cached in `urls` (see `data.js`) and released by `dropUrls()`.
+- Uploads run through `safeCompressPdf()` first. It tries a lossless pdf-lib
+  optimisation, then a lossy page-rasterisation pass for scanned documents.
+  If compression would grow the file, the original is uploaded unchanged.
 
 ## Adding a new feature
 

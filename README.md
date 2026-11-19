@@ -10,13 +10,13 @@ Built with plain HTML, CSS and JavaScript on Supabase (login, database, private 
 | style.css | All styling, themes (water / fire), animations, mobile layout |
 | js/config.js | Your Supabase Project URL and publishable key (the only file you edit) |
 | js/icons.js | SVG icons, the subject list, small helpers |
-| js/ | Modularised application logic (see js/README.md): state, utils, views, data, events |
+| js/ | Modularised application logic (see js/README.md): state, utils, views, data, PDF compression, events |
 | manifest.json, sw.js, icon-*.png | Make the site installable on a phone |
 | sql/schema.sql | Run first in Supabase: tables, roles, security rules, private storage |
 | sql/subjects_update.sql | Run second: admin can add, rename and delete subjects |
 | sql/features_update.sql | Run third: notice board and teacher note editing |
 
-Script order in index.html matters: Supabase library, PDF.js, then config.js, icons.js, app.js.
+Script order in index.html matters: Supabase, PDF.js and pdf-lib libraries, then the `js/` modules in the order documented in `js/README.md`.
 
 ## Setup
 1. Supabase: create a project. In SQL Editor run sql/schema.sql, then sql/subjects_update.sql, then sql/features_update.sql (one time each).
@@ -30,4 +30,7 @@ Script order in index.html matters: Supabase library, PDF.js, then config.js, ic
 ## Notes
 - The sql folder and this README are listed in .vercelignore, so they are not published.
 - Students cannot download PDFs. Teachers and admin can open and download.
+- PDFs are compressed in the browser before upload (pdf-lib + PDF.js). A lossless
+  pass runs first; scanned files may then be rasterised to JPEG. Uploads are capped
+  at 20 MB after compression (60 MB before).
 - Free Supabase projects can pause after long inactivity; export your tables now and then.

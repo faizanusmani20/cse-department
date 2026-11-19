@@ -45,13 +45,21 @@ document.addEventListener('click', async e => {
   else if (a === 'canceledit') S.edit = null;
   else if (a === 'savenote') {
     const n = db.notes.find(x => x.id === id), t = $('et').value.trim(), sj = $('es').value, f = $('ef').files[0];
-    if (!t) say('The title cannot be empty.'); else if (f && f.type !== 'application/pdf') say('Only PDF files are allowed.'); else if (f && f.size > 20 * 1024 * 1024) say('PDF must be under 20 MB.');
+    if (!t) say('The title cannot be empty.'); else if (f && f.type !== 'application/pdf') say('Only PDF files are allowed.'); else if (f && f.size > 60 * 1024 * 1024) say('PDF must be under 60 MB.');
     else {
-      el.disabled = true; el.textContent = 'Saving…'; let path = n.file_path;
-      if (f) { path = `${S.me.id}/${crypto.randomUUID()}.pdf`; const u = await sb.storage.from('notes').upload(path, f, { contentType: 'application/pdf' }); if (E(u)) { render(); return; } }
+      el.disabled = true; let path = n.file_path, uploadFile = f, savedPct = 0;
+      if (f) {
+        el.textContent = 'Compressing…';
+        const res = await safeCompressPdf(f, p => { el.textContent = 'Compressing… ' + Math.round(p * 100) + '%'; });
+        uploadFile = res.file; savedPct = res.saved;
+        if (uploadFile.size > 20 * 1024 * 1024) { say('Compressed PDF is still over 20 MB. Try a smaller file.'); el.disabled = false; el.textContent = 'Save changes'; return; }
+        path = `${S.me.id}/${crypto.randomUUID()}.pdf`;
+      }
+      el.textContent = 'Saving…';
+      if (f) { const u = await sb.storage.from('notes').upload(path, uploadFile, { contentType: 'application/pdf' }); if (E(u)) { render(); return; } }
       const r = await sb.from('notes').update({ title: t, subject: sj, file_path: path }).eq('id', id);
       if (E(r)) { if (f) await sb.storage.from('notes').remove([path]); }
-      else { if (f) await sb.storage.from('notes').remove([n.file_path]); delete urls[id]; S.edit = null; say('Note updated.', true); sync = true; }
+      else { if (f) await sb.storage.from('notes').remove([n.file_path]); delete urls[id]; S.edit = null; say('Note updated.' + (savedPct > 0.02 ? ` PDF compressed by ${Math.round(savedPct * 100)}%.` : ''), true); sync = true; }
     }
   } else if (a === 'forgot') S.mode = 'forgot';
   else if (a === 'sendreset') {
@@ -86,11 +94,15 @@ document.addEventListener('click', async e => {
   } else if (a === 'upload') {
     const f = $('f').files[0], t = $('t').value.trim();
     if (!t || !f) say('Add a title and choose a PDF.'); else if (f.type !== 'application/pdf') say('Only PDF files are allowed.');
-    else if (f.size > 20 * 1024 * 1024) say('PDF must be under 20 MB.');
+    else if (f.size > 60 * 1024 * 1024) say('PDF must be under 60 MB.');
     else {
-      el.disabled = true; el.textContent = 'Uploading…'; const path = `${S.me.id}/${crypto.randomUUID()}.pdf`;
-      let r = await sb.storage.from('notes').upload(path, f, { contentType: 'application/pdf' });
-      if (!E(r)) { r = await sb.from('notes').insert({ title: t, subject: $('s').value, teacher_id: S.me.id, file_path: path }); if (E(r)) await sb.storage.from('notes').remove([path]); else { S.tab = 'My notes'; say('Note uploaded.', true); sync = true; } }
+      el.disabled = true; el.textContent = 'Compressing…';
+      const res = await safeCompressPdf(f, p => { el.textContent = 'Compressing… ' + Math.round(p * 100) + '%'; });
+      const uploadFile = res.file;
+      if (uploadFile.size > 20 * 1024 * 1024) { say('Compressed PDF is still over 20 MB. Try a smaller file.'); el.disabled = false; el.textContent = 'Upload'; return; }
+      el.textContent = 'Uploading…'; const path = `${S.me.id}/${crypto.randomUUID()}.pdf`;
+      let r = await sb.storage.from('notes').upload(path, uploadFile, { contentType: 'application/pdf' });
+      if (!E(r)) { r = await sb.from('notes').insert({ title: t, subject: $('s').value, teacher_id: S.me.id, file_path: path }); if (E(r)) await sb.storage.from('notes').remove([path]); else { S.tab = 'My notes'; say('Note uploaded.' + (res.saved > 0.02 ? ` PDF compressed by ${Math.round(res.saved * 100)}% (${formatBytes(res.originalSize)} → ${formatBytes(res.size)}).` : ''), true); sync = true; } }
     }
   }
   if (sync) await load();
