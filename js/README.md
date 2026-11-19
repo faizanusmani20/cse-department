@@ -16,7 +16,11 @@ dependency list.
 | 5 | `app.js` | Core rendering: `render()` (top bar + view dispatch + animations) and `tabs()`. | `state.js`, `utils.js`, `views.js`* |
 | 6 | `views.js` | Screen templates: `authView`, `studentView`, `teacherView`, `adminView`, `reader`, `docCard`, `results`. | `state.js`, `utils.js`, `icons.js` |
 | 7 | `data.js` | Supabase data access: `load()`, `ensureUrl()`, `paint()` (PDF.js rendering). | `state.js` |
-| 8 | `events.js` | All event listeners (click, input, change, drag/drop, …) and application bootstrap. | everything above |
+| 8 | `pdf-compress.js` | Client-side PDF compression before upload (`safeCompressPdf`, `compressPdf`, `rasterizePdf`). | `pdf-lib`, `pdf.js` |
+| 9 | `viewer.js` | PDF viewer gestures and shortcuts: pinch zoom, Ctrl/Cmd + wheel, double-tap, page navigation, keyboard. | `data.js` (`paint`), `state.js` |
+| 10 | `notifications.js` | PWA notifications and polling for new requests/approvals (`checkNotifications`, `requestNotifications`). | `state.js`, `data.js` |
+| 11 | `offline-queue.js` | IndexedDB queue for offline uploads/requests and automatic replay on reconnect. | `state.js`, `data.js` |
+| 12 | `events.js` | All event listeners (click, input, change, drag/drop, …) and application bootstrap. | everything above |
 
 \*`app.js` is loaded before `views.js` but only calls `authView`/`studentView`/etc. at runtime (inside `render()`), by which point `views.js` has loaded. Keep `app.js` above `views.js` only if you preserve this lazy-call pattern.
 
@@ -39,6 +43,62 @@ Everything communicates through a small set of globals defined in `state.js`:
 - After a mutating action, set `sync = true` so `load()` refreshes `db`, then
   `render()` redraws. See `events.js`.
 - PDF blobs are cached in `urls` (see `data.js`) and released by `dropUrls()`.
+- Uploads run through `safeCompressPdf()` first. It tries a lossless pdf-lib
+  optimisation, then a lossy page-rasterisation pass for scanned documents.
+  If compression would grow the file, the original is uploaded unchanged.
+
+## PDF viewer
+
+The toolbar buttons live in `utils.js` (`tools()`); gesture and keyboard support
+lives in `viewer.js`. Both share `S.zoom` and the `paint()` renderer.
+
+| Input | Action |
+|---|---|
+| Pinch (touch) | Zoom between 60% and 300% |
+| Double-tap / double-click | Toggle between 100% and 200% |
+| Ctrl/Cmd + wheel | Zoom in/out |
+| `+` / `-` | Zoom in/out |
+| `0` | Reset to fit width |
+| `←` / `→`, `PageUp` / `PageDown` | Previous / next page |
+| `Home` / `End` | First / last page |
+| `F` | Toggle fullscreen |
+
+Zoom and the last-read page are remembered in `localStorage`.
+
+## Notifications
+
+`notifications.js` uses the Notification API through the service worker. The
+top-bar bell button asks for permission. While the app is open it polls every
+60 seconds (and on tab focus) and notifies:
+
+- teachers about new pending requests for their notes,
+- admins about teachers waiting for approval,
+- students when one of their requests is approved, rejected or revoked.
+
+Seen state is stored per user in `localStorage` (`cse:notif:<user>:<role>`), so
+the same request is not announced twice. The service worker also has a `push`
+handler ready for a future Web Push backend.
+
+## Offline behaviour
+
+The service worker (`sw.js`) precaches the app shell and the CDN libraries, so
+the app boots without a connection. Data and writes are handled separately:
+
+- `data.js` saves the last successful `db` snapshot in `localStorage`
+  (`cse:db:<user>`). If a load fails, it restores that snapshot and sets
+  `S.offline`, which shows the offline banner.
+- Opened PDFs are cached in Cache Storage (`cse-pdfs`) and served from there
+  when the network is unavailable.
+- `offline-queue.js` stores writes that need the network — uploads, note edits,
+  access requests, approvals, notices and new subjects — in IndexedDB
+  (`cse-offline`). They replay automatically on the `online` event and on the
+  next app start.
+- Supabase requests are never cached by the service worker; only the app shell,
+  CDN libraries and the PDF cache are. This keeps data fresh and permissions
+  enforced.
+
+**When changing any file in the app shell, bump `CACHE` in `sw.js`** so clients
+replace the old cached copy.
 
 ## Adding a new feature
 

@@ -6,10 +6,11 @@ function render() {
   const me = S.recovery ? null : S.me;
   const nav = `<div class="top"><div class="bar"><div class="logo" data-a="home">${BOOK} CSE Department</div>
  ${me && me.role === 'student' ? `<input class="search" id="q" placeholder="Search notes, subjects or teachers…" value="${esc(S.q)}">` : '<div style="flex:1"></div>'}
- ${me ? `<div class="chip"><div class="av">${esc(me.name[0])}</div><span>${esc(me.name)} · ${me.role}</span>${window._ip ? '<button class="g" data-a="install">Install app</button>' : ''}<button class="g" data-a="logout">Log out</button></div>` : ''}</div></div>`;
+ ${me ? `<div class="chip"><div class="av">${esc(me.name[0])}</div><span>${esc(me.name)} · ${me.role}</span>${notifyControl(me)}${window._ip ? '<button class="g" data-a="install">Install app</button>' : ''}<button class="g" data-a="logout">Log out</button></div>` : ''}</div></div>`;
   const m = S.msg ? `<div class="toast ${S.ok ? 'ok' : 'bad'}">${S.ok ? '✓' : '!'} ${esc(S.msg)}</div>` : '';
   const key = [me && me.role, S.tab, S.subject, S.note, S.mode].join('|'), an = key !== S.key; S.key = key;
-  $('root').innerHTML = (me ? nav : '') + `<main class="${an ? 'anim' : ''}">${!me ? authView() : ({ student: studentView, teacher: teacherView, admin: adminView })[me.role]()}</main>${m}`;
+  const offline = S.offline ? `<div class="offlinebar">${BELL}<span>Offline — showing saved data.${S.queueCount ? ` ${S.queueCount} change${S.queueCount === 1 ? '' : 's'} waiting to sync.` : ''}</span></div>` : '';
+  $('root').innerHTML = (me ? nav : '') + offline + `<main class="${an ? 'anim' : ''}">${!me ? authView() : ({ student: studentView, teacher: teacherView, admin: adminView })[me.role]()}</main>${m}`;
   S.lastMode = S.recovery ? 'reset' : S.mode;
   if (an) {
     document.querySelectorAll('.anim .grid>*,.anim .docs>*,.anim .card').forEach((e, i) => e.style.animationDelay = Math.min(i, 14) * 45 + 'ms');
