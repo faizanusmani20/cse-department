@@ -43,7 +43,12 @@ async function paint() {
     const pn = $('pn'); if (pn) pn.textContent = '/ ' + cs.length;
     let saved = 1; try { saved = +localStorage.getItem('lp:' + S.me.id + ':' + S.note) || 1; } catch (e) { }
     const start = Math.min(Math.max(S.pg || saved, 1), cs.length); S.pg = 0; box.scrollTop = cs[start - 1].offsetTop - 8;
-    const setP = () => { let p = 1; cs.forEach((x, i) => { if (x.offsetTop <= box.scrollTop + box.clientHeight / 3) p = i + 1; }); const j = $('pj'); if (j && document.activeElement !== j) j.value = p; try { localStorage.setItem('lp:' + S.me.id + ':' + S.note, p); } catch (e) { } };
+    const setP = () => {
+      let p = 1; cs.forEach((x, i) => { if (x.offsetTop <= box.scrollTop + box.clientHeight / 3) p = i + 1; });
+      const j = $('pj'); if (j && document.activeElement !== j) j.value = p;
+      const pr = $('rpb'); if (pr) { const max = box.scrollHeight - box.clientHeight; pr.style.width = (max > 0 ? Math.min(100, Math.max(0, box.scrollTop / max * 100)) : 100) + '%'; }
+      try { localStorage.setItem('lp:' + S.me.id + ':' + S.note, p); } catch (e) { }
+    };
     box.onscroll = () => { clearTimeout(box._t); box._t = setTimeout(setP, 150); }; setP();
     S.io = new IntersectionObserver(es => es.forEach(en => { const c = en.target; if (en.isIntersecting && !c._d) { c._d = 1; c._pg.render({ canvasContext: c.getContext('2d'), viewport: c._v }); } }), { root: box, rootMargin: '1400px 0px' });
     cs.forEach(c => S.io.observe(c));

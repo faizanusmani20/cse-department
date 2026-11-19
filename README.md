@@ -30,6 +30,8 @@ Script order in index.html matters: Supabase, PDF.js and pdf-lib libraries, then
 ## Notes
 - The sql folder and this README are listed in .vercelignore, so they are not published.
 - Students cannot download PDFs. Teachers and admin can open and download.
+- The reader supports pinch / Ctrl+wheel / double-tap zoom, page navigation,
+  keyboard shortcuts and a reading-progress bar. Zoom and page are remembered.
 - PDFs are compressed in the browser before upload (pdf-lib + PDF.js). A lossless
   pass runs first; scanned files may then be rasterised to JPEG. Uploads are capped
   at 20 MB after compression (60 MB before).

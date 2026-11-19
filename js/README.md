@@ -17,7 +17,8 @@ dependency list.
 | 6 | `views.js` | Screen templates: `authView`, `studentView`, `teacherView`, `adminView`, `reader`, `docCard`, `results`. | `state.js`, `utils.js`, `icons.js` |
 | 7 | `data.js` | Supabase data access: `load()`, `ensureUrl()`, `paint()` (PDF.js rendering). | `state.js` |
 | 8 | `pdf-compress.js` | Client-side PDF compression before upload (`safeCompressPdf`, `compressPdf`, `rasterizePdf`). | `pdf-lib`, `pdf.js` |
-| 9 | `events.js` | All event listeners (click, input, change, drag/drop, …) and application bootstrap. | everything above |
+| 9 | `viewer.js` | PDF viewer gestures and shortcuts: pinch zoom, Ctrl/Cmd + wheel, double-tap, page navigation, keyboard. | `data.js` (`paint`), `state.js` |
+| 10 | `events.js` | All event listeners (click, input, change, drag/drop, …) and application bootstrap. | everything above |
 
 \*`app.js` is loaded before `views.js` but only calls `authView`/`studentView`/etc. at runtime (inside `render()`), by which point `views.js` has loaded. Keep `app.js` above `views.js` only if you preserve this lazy-call pattern.
 
@@ -43,6 +44,24 @@ Everything communicates through a small set of globals defined in `state.js`:
 - Uploads run through `safeCompressPdf()` first. It tries a lossless pdf-lib
   optimisation, then a lossy page-rasterisation pass for scanned documents.
   If compression would grow the file, the original is uploaded unchanged.
+
+## PDF viewer
+
+The toolbar buttons live in `utils.js` (`tools()`); gesture and keyboard support
+lives in `viewer.js`. Both share `S.zoom` and the `paint()` renderer.
+
+| Input | Action |
+|---|---|
+| Pinch (touch) | Zoom between 60% and 300% |
+| Double-tap / double-click | Toggle between 100% and 200% |
+| Ctrl/Cmd + wheel | Zoom in/out |
+| `+` / `-` | Zoom in/out |
+| `0` | Reset to fit width |
+| `←` / `→`, `PageUp` / `PageDown` | Previous / next page |
+| `Home` / `End` | First / last page |
+| `F` | Toggle fullscreen |
+
+Zoom and the last-read page are remembered in `localStorage`.
 
 ## Adding a new feature
 

@@ -220,3 +220,9 @@ textarea{font:inherit;width:100%;padding:10px 12px;margin:8px 0;border-radius:8p
 @keyframes glowp{0%,100%{opacity:.7}50%{opacity:1}}
 @keyframes caus{0%{background-position:0 0,100% 0}100%{background-position:100% 100%,0 100%}}
 @media (max-width:760px){.m-signup .aside{order:0}.aside{min-height:230px}}
+
+/* ---- PDF viewer: progress bar and gesture support ---- */
+.pages{touch-action:pan-y;overscroll-behavior:contain}
+.rprog{height:3px;background:var(--bd);overflow:hidden}
+.rprog i{display:block;height:100%;width:0;background:linear-gradient(90deg,var(--pri),var(--pri2));transition:width .15s ease}
+.reader:fullscreen .rprog{flex:none}

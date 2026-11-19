@@ -31,10 +31,10 @@ document.addEventListener('click', async e => {
     if (db.notes.some(n => n.subject === v)) say('This subject still has notes. Delete or move them first.');
     else { if (!confirm('Delete the subject "' + v + '"?')) return; E(await sb.from('subjects').delete().eq('name', v)); sync = true; }
   } else if (a === 'install') { if (window._ip) { window._ip.prompt(); window._ip = null; } }
-  else if (a === 'zoom') {
-    const box = $('pages'); if (!box) return; const cs = [...box.querySelectorAll('canvas')]; let p = 1; cs.forEach((x, i) => { if (x.offsetTop <= box.scrollTop + box.clientHeight / 3) p = i + 1; });
-    S.pg = p; S.zoom = Math.min(2.5, Math.max(.6, (S.zoom || 1) + (+v) * .25)); $('zl').textContent = Math.round(S.zoom * 100) + '%'; await paint(); return;
-  } else if (a === 'rm') {
+  else if (a === 'zoom') { setZoom((S.zoom || 1) + (+v) * .25); return; }
+  else if (a === 'zoomreset') { setZoom(1); return; }
+  else if (a === 'page') { goToPage(currentPage() + (+v)); return; }
+  else if (a === 'rm') {
     const m = ['light', 'sepia', 'dark']; S.rm = m[(m.indexOf(S.rm || 'light') + 1) % 3]; try { localStorage.setItem('rm', S.rm); } catch (e) { }
     $('pg').className = 'pg rm-' + S.rm; el.textContent = RMN[S.rm]; return;
   } else if (a === 'notepost') {
