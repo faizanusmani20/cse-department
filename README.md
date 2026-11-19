@@ -34,6 +34,10 @@ Script order in index.html matters: Supabase, PDF.js and pdf-lib libraries, then
   keyboard shortcuts and a reading-progress bar. Zoom and page are remembered.
 - PWA notifications: use the bell button in the top bar to enable alerts. While
   the app is open it checks for new access requests / approvals every minute.
+- Offline mode: the app shell and CDN libraries are cached. The last data
+  snapshot and previously opened PDFs are available offline; uploads, requests
+  and other writes are queued and sync automatically when the connection returns.
+- If you change app-shell files, bump `CACHE` in `sw.js` so clients update.
 - PDFs are compressed in the browser before upload (pdf-lib + PDF.js). A lossless
   pass runs first; scanned files may then be rasterised to JPEG. Uploads are capped
   at 20 MB after compression (60 MB before).

@@ -231,3 +231,7 @@ textarea{font:inherit;width:100%;padding:10px 12px;margin:8px 0;border-radius:8p
 .nbell{display:inline-flex;align-items:center;gap:4px;padding:7px 10px}
 .nbell svg{width:15px;height:15px;margin:0}
 .nbadge{background:var(--bad);color:#fff;border-radius:99px;font-size:11px;line-height:1;padding:3px 6px;font-weight:700}
+
+/* ---- offline banner ---- */
+.offlinebar{position:relative;z-index:4;display:flex;gap:10px;align-items:center;justify-content:center;padding:8px 16px;background:color-mix(in srgb,var(--warn) 16%,var(--card));border-bottom:1px solid color-mix(in srgb,var(--warn) 40%,var(--bd));color:var(--tx);font-size:13px;font-weight:600;text-align:center}
+.offlinebar svg{width:16px;height:16px;color:var(--warn);flex:none}

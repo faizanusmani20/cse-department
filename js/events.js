@@ -22,7 +22,10 @@ document.addEventListener('click', async e => {
   } else if (a === 'subadd') {
     const nm = $('sn').value.trim(), ic = $('si').value;
     if (nm.length < 2) say('Enter a subject name (at least 2 letters).');
-    else { const r = await sb.from('subjects').insert({ name: nm, icon: ic }); if (r.error) say(r.error.code === '23505' ? 'A subject with this name already exists.' : r.error.message); else { say('Subject added.', true); sync = true; } }
+    else {
+      if (!navigator.onLine) { await queueOfflineAction('subadd', { name: nm, icon: ic }); say('Subject saved offline. It will be added when you reconnect.', true); render(); return; }
+      const r = await sb.from('subjects').insert({ name: nm, icon: ic }); if (r.error) say(r.error.code === '23505' ? 'A subject with this name already exists.' : r.error.message); else { say('Subject added.', true); sync = true; }
+    }
   } else if (a === 'subren') {
     const t = (prompt('Rename subject', v) || '').trim(); if (!t || t === v) return;
     const r = await sb.from('subjects').update({ name: t }).eq('name', v);
@@ -40,7 +43,10 @@ document.addEventListener('click', async e => {
     $('pg').className = 'pg rm-' + S.rm; el.textContent = RMN[S.rm]; return;
   } else if (a === 'notepost') {
     const m = $('nm').value.trim(); if (m.length < 3) say('Write a short notice first.');
-    else { const r = await sb.from('notices').insert({ message: m, created_by: S.me.id }); if (!E(r)) { say('Notice posted.', true); sync = true; } }
+    else {
+      if (!navigator.onLine) { await queueOfflineAction('notepost', { message: m }); say('Notice saved offline. It will post when you reconnect.', true); render(); return; }
+      const r = await sb.from('notices').insert({ message: m, created_by: S.me.id }); if (!E(r)) { say('Notice posted.', true); sync = true; }
+    }
   } else if (a === 'notedel') { E(await sb.from('notices').delete().eq('id', id)); sync = true; }
   else if (a === 'editnote') S.edit = id;
   else if (a === 'canceledit') S.edit = null;
@@ -57,6 +63,11 @@ document.addEventListener('click', async e => {
         path = `${S.me.id}/${crypto.randomUUID()}.pdf`;
       }
       el.textContent = 'Saving…';
+      if (!navigator.onLine) {
+        await queueOfflineAction('savenote', { id, title: t, subject: sj, path, oldPath: n.file_path }, uploadFile);
+        say('Saved offline. Changes will sync when you reconnect.', true);
+        S.edit = null; render(); return;
+      }
       if (f) { const u = await sb.storage.from('notes').upload(path, uploadFile, { contentType: 'application/pdf' }); if (E(u)) { render(); return; } }
       const r = await sb.from('notes').update({ title: t, subject: sj, file_path: path }).eq('id', id);
       if (E(r)) { if (f) await sb.storage.from('notes').remove([path]); }
@@ -71,7 +82,7 @@ document.addEventListener('click', async e => {
     const p = $('p').value, p2 = $('p2').value;
     if (p.length < 8) say('Password must be 8 or more characters.'); else if (p !== p2) say('The two passwords do not match.');
     else { const r = await sb.auth.updateUser({ password: p }); if (!E(r)) { await sb.auth.signOut(); S.recovery = false; S.mode = 'login'; history.replaceState(null, '', location.pathname); say('Password changed. Log in with your new password.', true); } }
-  } else if (a === 'logout') { S.edit = null; dropUrls(); await sb.auth.signOut(); S.me = null; db = EMPTY(); S.note = null; S.subject = null; S.q = ''; }
+  } else if (a === 'logout') { S.edit = null; dropUrls(); await clearOfflineData(); await sb.auth.signOut(); S.me = null; db = EMPTY(); S.note = null; S.subject = null; S.q = ''; S.offline = false; S.queueCount = 0; }
   else if (a === 'home') { S.subject = null; S.note = null; S.q = ''; S.tab = 'Browse'; }
   else if (a === 'subject') { S.subject = v; S.note = null; S.tab = 'Browse'; }
   else if (a === 'note') S.note = id;
@@ -80,10 +91,17 @@ document.addEventListener('click', async e => {
   else if (a === 'full') { const p = document.querySelector('.reader'); if (p && p.requestFullscreen) p.requestFullscreen(); return; }
   else if (a === 'request') {
     const old = reqOf(S.me.id, id);
+    if (!navigator.onLine) { await queueOfflineAction('request', { note_id: id, existing: old ? old.id : null }); say('Request saved offline. It will be sent when you reconnect.', true); render(); return; }
     const r = old ? await sb.from('requests').update({ status: 'pending' }).eq('id', old.id) : await sb.from('requests').insert({ student_id: S.me.id, note_id: id });
     if (!E(r)) say('Request sent to the teacher.', true); sync = true;
-  } else if (a === 'decide') { E(await sb.from('requests').update({ status: v }).eq('id', id)); sync = true; }
-  else if (a === 'tstat') { E(await sb.from('profiles').update({ status: v }).eq('id', rid)); sync = true; }
+  } else if (a === 'decide') {
+    if (!navigator.onLine) { await queueOfflineAction('decide', { id, status: v }); say('Decision saved offline. It will sync when you reconnect.', true); render(); return; }
+    E(await sb.from('requests').update({ status: v }).eq('id', id)); sync = true;
+  }
+  else if (a === 'tstat') {
+    if (!navigator.onLine) { await queueOfflineAction('tstat', { id: rid, status: v }); say('Approval saved offline. It will sync when you reconnect.', true); render(); return; }
+    E(await sb.from('profiles').update({ status: v }).eq('id', rid)); sync = true;
+  }
   else if (a === 'deluser') {
     if (!confirm('Delete this user and all their notes? This cannot be undone.')) return;
     const paths = db.notes.filter(n => n.teacher === rid).map(n => n.file_path);
@@ -102,6 +120,11 @@ document.addEventListener('click', async e => {
       const uploadFile = res.file;
       if (uploadFile.size > 20 * 1024 * 1024) { say('Compressed PDF is still over 20 MB. Try a smaller file.'); el.disabled = false; el.textContent = 'Upload'; return; }
       el.textContent = 'Uploading…'; const path = `${S.me.id}/${crypto.randomUUID()}.pdf`;
+      if (!navigator.onLine) {
+        await queueOfflineAction('upload', { path, title: t, subject: $('s').value }, uploadFile);
+        say('Saved offline. It will upload automatically when you reconnect.', true);
+        S.tab = 'My notes'; render(); return;
+      }
       let r = await sb.storage.from('notes').upload(path, uploadFile, { contentType: 'application/pdf' });
       if (!E(r)) { r = await sb.from('notes').insert({ title: t, subject: $('s').value, teacher_id: S.me.id, file_path: path }); if (E(r)) await sb.storage.from('notes').remove([path]); else { S.tab = 'My notes'; say('Note uploaded.' + (res.saved > 0.02 ? ` PDF compressed by ${Math.round(res.saved * 100)}% (${formatBytes(res.originalSize)} → ${formatBytes(res.size)}).` : ''), true); sync = true; } }
     }
@@ -169,6 +192,12 @@ document.addEventListener('contextmenu', e => { if (e.target.closest && e.target
 /* Global error reporter. */
 window.addEventListener('unhandledrejection', e => { say('Something went wrong: ' + ((e.reason && e.reason.message) || e.reason)); render(); });
 
-/* Bootstrap: show loading, fetch data, then render. */
+/* Bootstrap: show loading, restore queued work, fetch data, then flush. */
 S.loading = true; render();
-(async () => { await load(); S.loading = false; render(); })();
+(async () => {
+  await refreshQueueCount();
+  await load();
+  S.loading = false;
+  render();
+  if (navigator.onLine) flushOfflineQueue();
+})();

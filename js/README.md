@@ -19,7 +19,8 @@ dependency list.
 | 8 | `pdf-compress.js` | Client-side PDF compression before upload (`safeCompressPdf`, `compressPdf`, `rasterizePdf`). | `pdf-lib`, `pdf.js` |
 | 9 | `viewer.js` | PDF viewer gestures and shortcuts: pinch zoom, Ctrl/Cmd + wheel, double-tap, page navigation, keyboard. | `data.js` (`paint`), `state.js` |
 | 10 | `notifications.js` | PWA notifications and polling for new requests/approvals (`checkNotifications`, `requestNotifications`). | `state.js`, `data.js` |
-| 11 | `events.js` | All event listeners (click, input, change, drag/drop, …) and application bootstrap. | everything above |
+| 11 | `offline-queue.js` | IndexedDB queue for offline uploads/requests and automatic replay on reconnect. | `state.js`, `data.js` |
+| 12 | `events.js` | All event listeners (click, input, change, drag/drop, …) and application bootstrap. | everything above |
 
 \*`app.js` is loaded before `views.js` but only calls `authView`/`studentView`/etc. at runtime (inside `render()`), by which point `views.js` has loaded. Keep `app.js` above `views.js` only if you preserve this lazy-call pattern.
 
@@ -77,6 +78,27 @@ top-bar bell button asks for permission. While the app is open it polls every
 Seen state is stored per user in `localStorage` (`cse:notif:<user>:<role>`), so
 the same request is not announced twice. The service worker also has a `push`
 handler ready for a future Web Push backend.
+
+## Offline behaviour
+
+The service worker (`sw.js`) precaches the app shell and the CDN libraries, so
+the app boots without a connection. Data and writes are handled separately:
+
+- `data.js` saves the last successful `db` snapshot in `localStorage`
+  (`cse:db:<user>`). If a load fails, it restores that snapshot and sets
+  `S.offline`, which shows the offline banner.
+- Opened PDFs are cached in Cache Storage (`cse-pdfs`) and served from there
+  when the network is unavailable.
+- `offline-queue.js` stores writes that need the network — uploads, note edits,
+  access requests, approvals, notices and new subjects — in IndexedDB
+  (`cse-offline`). They replay automatically on the `online` event and on the
+  next app start.
+- Supabase requests are never cached by the service worker; only the app shell,
+  CDN libraries and the PDF cache are. This keeps data fresh and permissions
+  enforced.
+
+**When changing any file in the app shell, bump `CACHE` in `sw.js`** so clients
+replace the old cached copy.
 
 ## Adding a new feature
 
