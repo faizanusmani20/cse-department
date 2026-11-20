@@ -24,56 +24,137 @@ function goToPage(p) {
 
 function updateZoomLabel() { const z = $('zl'); if (z) z.textContent = Math.round((S.zoom || 1) * 100) + '%'; }
 
+// /* Commit a new zoom level and repaint. */
+// function setZoom(z) {
+//   if (!viewerOpen()) return;
+//   S.zoom = Math.min(VIEWER_MAX_ZOOM, Math.max(VIEWER_MIN_ZOOM, z));
+//   updateZoomLabel();
+//   try { localStorage.setItem('rz', S.zoom); } catch (e) { }
+//   S.pg = currentPage();
+//   paint();
+// }
+
+// function zoomBy(d) { setZoom((S.zoom || 1) + d); }
+
+// /* Live zoom while a gesture is in progress; repaint is debounced. */
+// let paintTimer = null;
+// function schedulePaint() {
+//   clearTimeout(paintTimer);
+//   paintTimer = setTimeout(() => { if (viewerOpen()) { S.pg = currentPage(); paint(); } }, 140);
+// }
+
+// /* Restore the last zoom level. */
+// try { const z = +localStorage.getItem('rz'); if (z >= VIEWER_MIN_ZOOM && z <= VIEWER_MAX_ZOOM) S.zoom = z; } catch (e) { }
+
+// /* ---- pinch to zoom (touch) ---- */
+// let pinch = null, lastTap = 0, lastTapX = 0, lastTapY = 0;
+
+// document.addEventListener('touchstart', e => {
+//   if (!viewerOpen() || e.touches.length !== 2 || !e.target.closest('#pages')) return;
+//   const [a, b] = e.touches;
+//   pinch = { dist: Math.hypot(a.clientX - b.clientX, a.clientY - b.clientY), zoom: S.zoom || 1, page: currentPage() };
+//   clearTimeout(paintTimer);
+//   e.preventDefault();
+// }, { passive: false });
+
+// document.addEventListener('touchmove', e => {
+//   if (!pinch || e.touches.length !== 2) return;
+//   const [a, b] = e.touches;
+//   const d = Math.hypot(a.clientX - b.clientX, a.clientY - b.clientY);
+//   if (!pinch.dist) return;
+//   S.zoom = Math.min(VIEWER_MAX_ZOOM, Math.max(VIEWER_MIN_ZOOM, pinch.zoom * d / pinch.dist));
+//   updateZoomLabel();
+//   try { localStorage.setItem('rz', S.zoom); } catch (err) { }
+//   e.preventDefault();
+//   schedulePaint();
+// }, { passive: false });
+
+// document.addEventListener('touchend', e => {
+//   if (pinch) {
+//     if (e.touches.length === 0) {
+//       const p = pinch.page; pinch = null; lastTap = 0;
+//       clearTimeout(paintTimer); S.pg = p; paint();
+//     }
+//     return;
+//   }
+//   /* Double-tap toggles between fit (1x) and 2x. */
+//   if (e.changedTouches.length === 1 && viewerOpen() && e.target.closest('#pages') && e.touches.length === 0) {
+//     const t = e.changedTouches[0], now = Date.now();
+//     if (now - lastTap < 320 && Math.hypot(t.clientX - lastTapX, t.clientY - lastTapY) < 30) {
+//       lastTap = 0; setZoom((S.zoom || 1) > 1.4 ? 1 : 2); return;
+//     }
+//     lastTap = now; lastTapX = t.clientX; lastTapY = t.clientY;
+//   }
+// }, { passive: true });
+
+/* Repaint at the new zoom, but keep the same part of the document in view. */
+async function repaintKeepView() {
+  const box = $('pages'); if (!box) return;
+  const fx = (box.scrollLeft + box.clientWidth / 2) / Math.max(box.scrollWidth, 1);
+  const fy = (box.scrollTop + box.clientHeight / 2) / Math.max(box.scrollHeight, 1);
+  S.pg = currentPage();
+  await paint();
+  const b = $('pages'); if (!b) return;
+  b.scrollTop = fy * b.scrollHeight - b.clientHeight / 2;
+  b.scrollLeft = fx * b.scrollWidth - b.clientWidth / 2;
+}
+
 /* Commit a new zoom level and repaint. */
 function setZoom(z) {
   if (!viewerOpen()) return;
   S.zoom = Math.min(VIEWER_MAX_ZOOM, Math.max(VIEWER_MIN_ZOOM, z));
   updateZoomLabel();
   try { localStorage.setItem('rz', S.zoom); } catch (e) { }
-  S.pg = currentPage();
-  paint();
+  repaintKeepView();
 }
 
 function zoomBy(d) { setZoom((S.zoom || 1) + d); }
 
-/* Live zoom while a gesture is in progress; repaint is debounced. */
+/* Debounced repaint used by Ctrl+wheel. */
 let paintTimer = null;
 function schedulePaint() {
   clearTimeout(paintTimer);
-  paintTimer = setTimeout(() => { if (viewerOpen()) { S.pg = currentPage(); paint(); } }, 140);
+  paintTimer = setTimeout(() => { if (viewerOpen()) repaintKeepView(); }, 140);
 }
 
 /* Restore the last zoom level. */
 try { const z = +localStorage.getItem('rz'); if (z >= VIEWER_MIN_ZOOM && z <= VIEWER_MAX_ZOOM) S.zoom = z; } catch (e) { }
 
-/* ---- pinch to zoom (touch) ---- */
+/* ---- pinch to zoom (touch): pages scale live under your fingers ---- */
 let pinch = null, lastTap = 0, lastTapX = 0, lastTapY = 0;
+const pdist = t => Math.hypot(t[0].clientX - t[1].clientX, t[0].clientY - t[1].clientY);
 
 document.addEventListener('touchstart', e => {
   if (!viewerOpen() || e.touches.length !== 2 || !e.target.closest('#pages')) return;
-  const [a, b] = e.touches;
-  pinch = { dist: Math.hypot(a.clientX - b.clientX, a.clientY - b.clientY), zoom: S.zoom || 1, page: currentPage() };
+  const box = $('pages'), r = box.getBoundingClientRect();
   clearTimeout(paintTimer);
+  pinch = {
+    box, dist: pdist(e.touches), zoom: S.zoom || 1, k: 1,
+    cx: (e.touches[0].clientX + e.touches[1].clientX) / 2 - r.left,
+    cy: (e.touches[0].clientY + e.touches[1].clientY) / 2 - r.top,
+    st: box.scrollTop, sl: box.scrollLeft,
+    base: viewerCanvases().map(c => [c, c.offsetWidth, c.offsetHeight])
+  };
   e.preventDefault();
 }, { passive: false });
 
 document.addEventListener('touchmove', e => {
-  if (!pinch || e.touches.length !== 2) return;
-  const [a, b] = e.touches;
-  const d = Math.hypot(a.clientX - b.clientX, a.clientY - b.clientY);
-  if (!pinch.dist) return;
-  S.zoom = Math.min(VIEWER_MAX_ZOOM, Math.max(VIEWER_MIN_ZOOM, pinch.zoom * d / pinch.dist));
-  updateZoomLabel();
-  try { localStorage.setItem('rz', S.zoom); } catch (err) { }
+  if (!pinch || e.touches.length !== 2 || !pinch.dist) return;
   e.preventDefault();
-  schedulePaint();
+  const z = Math.min(VIEWER_MAX_ZOOM, Math.max(VIEWER_MIN_ZOOM, pinch.zoom * pdist(e.touches) / pinch.dist));
+  const k = pinch.k = z / pinch.zoom;
+  pinch.base.forEach(([c, w, h]) => { c.style.width = w * k + 'px'; c.style.height = h * k + 'px'; });
+  pinch.box.scrollTop = (pinch.st + pinch.cy) * k - pinch.cy;   /* keep the point between your fingers steady */
+  pinch.box.scrollLeft = (pinch.sl + pinch.cx) * k - pinch.cx;
+  S.zoom = z; updateZoomLabel();
 }, { passive: false });
 
 document.addEventListener('touchend', e => {
   if (pinch) {
-    if (e.touches.length === 0) {
-      const p = pinch.page; pinch = null; lastTap = 0;
-      clearTimeout(paintTimer); S.pg = p; paint();
+    if (e.touches.length < 2) {
+      const changed = Math.abs(pinch.k - 1) > 0.02; pinch = null; lastTap = 0;
+      try { localStorage.setItem('rz', S.zoom); } catch (err) { }
+      if (changed) repaintKeepView();                            /* re-render sharp */
     }
     return;
   }
