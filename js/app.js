@@ -21,3 +21,4 @@ function render() {
 
 /* Tab bar helper; keeps the current tab if still valid. */
 function tabs(l, badge = {}) { S.tab = l.includes(S.tab) ? S.tab : l[0]; return `<div class="tabs">${l.map(t => `<button class="${t === S.tab ? 'on' : ''}" data-a="tab" data-v="${t}">${t}${badge[t] ? `<span class="n">${badge[t]}</span>` : ''}</button>`).join('')}</div>`; }
+

@@ -7,7 +7,10 @@ document.addEventListener('click', async e => {
   say(''); if ($('e')) S.em = $('e').value; if ($('n')) S.nm = $('n').value;
   if (['login', 'signup', 'sendreset', 'setpw', 'request'].includes(a)) { el.disabled = true; el.innerHTML = '<span class="spin s"></span> Please wait'; }
   let sync = false;
+  S.lastMode = S.mode;
   if (a === 'mode') S.mode = S.mode === 'login' ? 'signup' : 'login';
+
+
   else if (a === 'login') {
     const r = await sb.auth.signInWithPassword({ email: $('e').value.trim(), password: $('p').value });
     if (r.error) say(r.error.message === 'Invalid login credentials' ? 'Wrong email or password.' : r.error.message);
