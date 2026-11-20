@@ -235,3 +235,42 @@ textarea{font:inherit;width:100%;padding:10px 12px;margin:8px 0;border-radius:8p
 /* ---- offline banner ---- */
 .offlinebar{position:relative;z-index:4;display:flex;gap:10px;align-items:center;justify-content:center;padding:8px 16px;background:color-mix(in srgb,var(--warn) 16%,var(--card));border-bottom:1px solid color-mix(in srgb,var(--warn) 40%,var(--bd));color:var(--tx);font-size:13px;font-weight:600;text-align:center}
 .offlinebar svg{width:16px;height:16px;color:var(--warn);flex:none}
+
+/* ---- Slide animation only (paste at end) ---- */
+.authwrap{overflow:hidden}
+.aside{z-index:3;will-change:transform,border-radius}
+.formside{will-change:transform}
+
+/* login -> sign up: panel glides left to right, form glides right to left */
+@keyframes ovToR{
+  0%  {transform:translateX(-100%);border-radius:0 0 0 0}
+  50% {border-radius:0 90px 90px 0;box-shadow:0 0 60px rgba(0,0,0,.35)}
+  100%{transform:none;border-radius:0}}
+/* sign up -> login: the reverse */
+@keyframes ovToL{
+  0%  {transform:translateX(100%);border-radius:0}
+  50% {border-radius:90px 0 0 90px;box-shadow:0 0 60px rgba(0,0,0,.35)}
+  100%{transform:none;border-radius:0}}
+@keyframes fmToL{0%{transform:translateX(100%);opacity:0}55%{opacity:.2}100%{transform:none;opacity:1}}
+@keyframes fmToR{0%{transform:translateX(-100%);opacity:0}55%{opacity:.2}100%{transform:none;opacity:1}}
+
+.flip.m-signup .aside   {animation:ovToR .95s cubic-bezier(.7,0,.2,1)}
+.flip.m-signup .formside{animation:fmToL .95s cubic-bezier(.7,0,.2,1)}
+.flip:not(.m-signup) .aside   {animation:ovToL .95s cubic-bezier(.7,0,.2,1)}
+.flip:not(.m-signup) .formside{animation:fmToR .95s cubic-bezier(.7,0,.2,1)}
+
+/* text and fields appear after the slide lands */
+.flip .fcard{animation:fadeUp .6s ease .55s backwards}
+.flip .at h1{animation:fadeUp .6s ease .5s backwards}
+.flip .at p {animation:fadeUp .6s ease .6s backwards}
+.flip .ghost{animation:pop .5s ease .7s backwards}
+.flip .perks li:nth-child(1){animation:fadeUp .5s ease .7s backwards}
+.flip .perks li:nth-child(2){animation:fadeUp .5s ease .8s backwards}
+.flip .perks li:nth-child(3){animation:fadeUp .5s ease .9s backwards}
+
+@media (max-width:760px){
+  @keyframes ovToR{from{transform:translateY(-40%);opacity:.3}to{transform:none;opacity:1}}
+  @keyframes ovToL{from{transform:translateY(-40%);opacity:.3}to{transform:none;opacity:1}}
+  @keyframes fmToL{from{transform:translateY(30px);opacity:0}to{transform:none;opacity:1}}
+  @keyframes fmToR{from{transform:translateY(30px);opacity:0}to{transform:none;opacity:1}}
+}
