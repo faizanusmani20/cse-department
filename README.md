@@ -46,7 +46,7 @@ Script order in index.html matters: Supabase, PDF.js and pdf-lib libraries, then
 ## TO DO
 
 - [x] Pdf View improve
-- [ ] Add slide animation in Login Page
+- [x] Add slide animation in Login Page
 - [ ] Fix the notification alert ev3n app is closed
-- [ ] Think new features
+- [ ] Think about new features
 - [ ] convert this into react
