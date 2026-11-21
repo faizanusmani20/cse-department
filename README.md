@@ -42,3 +42,8 @@ Script order in index.html matters: Supabase, PDF.js and pdf-lib libraries, then
   pass runs first; scanned files may then be rasterised to JPEG. Uploads are capped
   at 20 MB after compression (60 MB before).
 - Free Supabase projects can pause after long inactivity; export your tables now and then.
+
+## TO DO
+
+[] Fix the notification alert ev3n app is closed
+[X] Pdf View improve
